@@ -55,9 +55,9 @@ def log(msg, step=None, total=None):
 # =========================
 def load_models():
     """Загружаем все ML модели (один раз за сессию)."""
-    st.write("🔄 Загружаем CNN модель...")
+    st.write("🔄 Loading CNN model...")
     cnn_model = CNNClassifier(log_fn=st.write)
-    st.write("✅ CNN модель загружена")
+    st.write("✅ CNN model is loaded")
     # Если будут другие модели — добавь их сюда
     return {"cnn": cnn_model}
 
@@ -86,29 +86,29 @@ def analyze_tic(tic_id):
         log("⏳ Загружаем световую кривую и выполняем BLS...", step, steps)
         lc, bls, bls_result, period, t0, duration, depth = get_lightcurve_and_bls(tic_id)
         if lc is None:
-            log("❌ Не удалось получить кривую блеска. Проверь кэш lightkurve или интернет.", steps, steps)
+            log("❌ Cant find a lightcurve. Check lightkurve or no internet.", steps, steps)
             return None, None
-        log(f"✅ LC загружена (span ~{np.ptp(lc.time.value):.1f}d)", step, steps)  # FIX: Debug лог
+        log(f"✅ LC is loaded (span ~{np.ptp(lc.time.value):.1f}d)", step, steps)  # FIX: Debug лог
 
         # STEP 3: Классификация (FIX: После fetch!)
         step += 1
-        log("🔬 Классифицируем сигнал при помощи CNN...", step, steps)
+        log("🔬 Clissifing planet using CNN...", step, steps)
         model = st.session_state.models["cnn"]
         res = classify_target_full(tic_id, lc, period, t0, duration, depth, model=model)
-        log("📦 LC классифицирована", step, steps)
+        log("📦 LC classified", step, steps)
 
         # STEP 4: Параметры звезды (с кэшем)
         step += 1
         cache_key = f"star_params_{tic_id}"
         if cache_key not in st.session_state:
-            log("🔎 Получаем параметры звезды (MAST/TIC)...", step, steps)
+            log("🔎 Downloading star parametrs (MAST/TIC)...", step, steps)
             star_params = get_star_params(tic_id) or {"T_star": 3494, "R_star": 0.42, "M_star": 0.41}  # Hardcode fallback for this TIC
             star_params.pop("cross_conf", None)
             st.session_state[cache_key] = star_params
-            log("🌍 Параметры звезды сохранены в кэше", step, steps)
+            log("🌍 Paramets are saved in cache", step, steps)
         else:
             star_params = st.session_state[cache_key]
-            log("🌍 Параметры звезды взяты из кэша", step, steps)
+            log("🌍 Paramets are taken from cache", step, steps)
 
         # Получи K из RV (опционально, для массы в get_planet_data)
         k = None  # Default
@@ -123,7 +123,7 @@ def analyze_tic(tic_id):
 
         # STEP 5: Параметры планеты
         step += 1
-        log("🧮 Вычисляем паспорт планеты...", step, steps)
+        log("🧮 Calculating exoplanet passport...", step, steps)
         planet_passport = get_planet_data(
             res["Period"], res["Depth"], 
             star_params["T_star"], star_params["R_star"], star_params["M_star"], 
@@ -134,11 +134,11 @@ def analyze_tic(tic_id):
 
         # STEP 6: Завершение
         step += 1
-        log(f"🎉 Анализ {tic_id} завершён!", step, steps)
+        log(f"🎉 Analysis {tic_id} is done!", step, steps)
         return res, lc
 
     except Exception as e:
-        log(f"❌ Ошибка при обработке {tic_id}: {e}", steps, steps)
+        log(f"❌ Error {tic_id}: {e}", steps, steps)
         return None, None
 
     finally:
@@ -164,7 +164,7 @@ if analyze_btn:
             st.pyplot(fig)
 
             if st.button("Explain LC"):
-                st.write(f"🔴 Транзит: phase 0, depth = {res['Depth']:.4f}")
+                st.write(f"🔴 Transit: phase 0, depth = {res['Depth']:.4f}")
 
         with col2:
             st.subheader("🪐 Planet Passport")
@@ -196,7 +196,7 @@ if analyze_btn:
             story = (
                 f"Планета {tic_id}: {res.get('Class', 'Unknown')}, "
                 f"Rp {res.get('R_p_Rearth', 'N/A')} R⊕. "
-                f"Score {res['Hybrid_score']:.2f}. Новый мир открыт!"
+                f"Score {res['Hybrid_score']:.2f}. New world is opened!"
             )
             st.write("🔊 Audio: " + story)
             
@@ -212,4 +212,4 @@ if analyze_btn:
                 st.info("Audio playback: Use a valid TTS service URL in production.")
     else:
         # Показать ошибку, если res/lc None
-        st.error("Анализ не удался. Проверь TIC ID или кэш lightkurve (очисти ~/.lightkurve/cache).")
+        st.error("Analysis failed. Check TIC ID or cache lightkurve (clear ~/.lightkurve/cache).")
