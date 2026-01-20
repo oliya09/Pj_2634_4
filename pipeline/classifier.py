@@ -50,18 +50,18 @@ class CNNClassifier:
                 new_state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()}
                 self.model.load_state_dict(new_state_dict, strict=False)
                 self.model.eval()
-                self.log(f"✅ CNN модель успешно загружена: {CNN_MODEL_PATH}")
+                self.log(f"✅ CNN model is loaded: {CNN_MODEL_PATH}")
             except Exception as e:
-                self.log(f"❌ Ошибка загрузки модели: {e}")
+                self.log(f"❌ Error loading a model: {e}")
                 self.model = None
         else:
-            self.log("⚠️ Файл модели best_model.pth не найден.")
+            self.log("⚠️ Model best_model.pth isnt found.")
             self.model = None
 
     # ----------------------- Предсказание -----------------------
     def predict(self, flux: np.ndarray) -> float:
         if self.model is None:
-            self.log("⚠️ Модель не загружена, возврат 0.5")
+            self.log("⚠️ Model isnt loaded")
             return 0.5
 
         # предобработка
@@ -81,7 +81,7 @@ class CNNClassifier:
         time, flux = lc.time.value, lc.flux.value
         flux = np.nan_to_num(flux, nan=1.0)
         if len(time) < 20:
-            self.log("⚠️ Кривая слишком короткая.")
+            self.log("⚠️ Lightcurve is too short.")
             return np.zeros(7), flux
 
         flux_rms = np.std(flux)
@@ -132,7 +132,7 @@ def classify_target_full(target_id: str, lc: Any, period: float, t0: float, dura
     if lc is None or len(lc.flux) == 0 or np.isnan(lc.flux).all():
         return {"ID": target_id, "Status": "No Data", "Reason": "Empty LC", "Score": 0.0, "lc": None}
     if model is None:
-        raise ValueError("CNN модель не передана!")
+        raise ValueError("CNN isnt found!")
 
     features, flux = model.extract_features(lc, period, t0, duration, depth)
     ml_score = model.predict(flux)
